@@ -14,42 +14,41 @@
     return '_' + id + '_$1';
   }
 
-  $(document).on('click', '.add_fields', function(e) {
-    e.preventDefault();
-    var $this                 = $(this),
-        assoc                 = $this.data('association'),
+  /**
+   * Add fields in the page
+   * @param {object} $this  Button in jquery that fired the request
+   * @param {Array.<number>} new_ids New identifications for fields to add,
+   *   	index starting at 0 and there are count
+   * @param {number} count Amount of fields to add
+   */
+  var add_fields = function($this, new_ids, count) {
+    var assoc                 = $this.data('association'),
         assocs                = $this.data('associations'),
         content               = $this.data('association-insertion-template'),
         insertionMethod       = $this.data('association-insertion-method') || $this.data('association-insertion-position') || 'before',
         insertionNode         = $this.data('association-insertion-node'),
         insertionTraversal    = $this.data('association-insertion-traversal'),
-        count                 = parseInt($this.data('count'), 10),
         regexp_braced         = new RegExp('\\[new_' + assoc + '\\](.*?\\s)', 'g'),
         regexp_underscord     = new RegExp('_new_' + assoc + '_(\\w*)', 'g'),
-        new_id                = create_new_id(),
-        new_content           = content.replace(regexp_braced, newcontent_braced(new_id)),
+        regexp_inputid        = new RegExp('<input .*id="[^"]*_' + assoc + '_id"', 'g'),
+        new_content           = content.replace(regexp_braced, newcontent_braced(new_ids[0])),
         new_contents          = [];
 
-    
+    new_content = new_content.replace(regexp_inputid, 
+		    '$& value="' + new_ids[0] + '" ');
     if (new_content == content) {
       regexp_braced     = new RegExp('\\[new_' + assocs + '\\](.*?\\s)', 'g');
       regexp_underscord = new RegExp('_new_' + assocs + '_(\\w*)', 'g');
-      new_content       = content.replace(regexp_braced, newcontent_braced(new_id));
+      new_content       = content.replace(regexp_braced, newcontent_braced(new_ids[0]));
     }
 
-    new_content = new_content.replace(regexp_underscord, newcontent_underscord(new_id));
+    new_content = new_content.replace(regexp_underscord, newcontent_underscord(new_ids[0]));
     new_contents = [new_content];
 
-    count = (isNaN(count) ? 1 : Math.max(count, 1));
-    count -= 1;
-    
-    while (count) {
-      new_id      = create_new_id();
-      new_content = content.replace(regexp_braced, newcontent_braced(new_id));
-      new_content = new_content.replace(regexp_underscord, newcontent_underscord(new_id));
+    for(i = 1; i<count; i++) {
+      new_content = content.replace(regexp_braced, newcontent_braced(new_ids[i]));
+      new_content = new_content.replace(regexp_underscord, newcontent_underscord(new_ids[i]));
       new_contents.push(new_content);
-      
-      count -= 1;
     }
     
     if (insertionNode){
@@ -74,8 +73,37 @@
 
       insertionNode.trigger('cocoon:after-insert', [contentNode]);
     }
-  });
+  }
 
+  $(document).on('click', '.add_fields', function(e) {
+    e.preventDefault();
+    var $this                 = $(this),
+	assoc                 = $this.data('association'),
+        count = parseInt($this.data('count'), 10);
+    count = (isNaN(count) ? 1 : Math.max(count, 1));
+    if ($this.data("ajax") && count == 1) {
+      // For the moment ajax when adding 1 element, so function that
+      // answers AJAX request is easier.
+      var cid = $this.data("ajaxdata");
+      var mdata = {};
+      mdata[cid] = $('#' + cid).val();
+      $.ajax($this.data("ajax"), {
+        type: 'GET',
+        dataType: 'json', 
+        data: mdata
+      }).done(function(new_id) { 
+        add_fields($this, [new_id], 1); 
+      });
+    } else {
+        new_ids=[];
+	for(i = 0; i<count; i++) {
+    		new_ids[i] = create_new_id();
+	}
+    	add_fields($this, new_ids, count);
+    }
+  });
+    
+  
   $(document).on('click', '.remove_fields.dynamic, .remove_fields.existing', function(e) {
     var $this = $(this),
         wrapper_class = $this.data('wrapper-class') || 'nested-fields',

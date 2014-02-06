@@ -28,7 +28,11 @@ module Cocoon
 
         classes = []
         classes << "remove_fields"
-        classes << (is_dynamic ? 'dynamic' : 'existing')
+        if !html_options[:'data-ajax'].nil? 
+            classes << "existing"
+        else
+            classes << (is_dynamic ? 'dynamic' : 'existing')
+        end
         classes << 'destroyed' if f.object.marked_for_destruction?
         html_options[:class] = [html_options[:class], classes.join(' ')].compact.join(' ')
 
