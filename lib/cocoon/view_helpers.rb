@@ -28,7 +28,7 @@ module Cocoon
 
         classes = []
         classes << "remove_fields"
-        if !html_options[:'data-ajax'].nil? 
+        if !html_options[:'data-existing'].nil? 
             classes << "existing"
         else
             classes << (is_dynamic ? 'dynamic' : 'existing')
