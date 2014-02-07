@@ -473,11 +473,10 @@ in the partial added, then:
 * Add a method in a controller that will serve the AJAX request by
   creating the record. It should take from params the id of the parent record, 
   set default values, save and return the identification of the new record
-* Add a route to the method in config/routes.rb
-* In the view in the helper link_to_add_association add data-ajax with the 
-  route that will create the record and data-ajax-data with the html 
-  identification of the field with the id of the parent record 
-  (TODO: nested in nested)
+* Add a route to the method in config/routes
+* In the link_to_add_association add data-ajax with the route that will
+  create the record, data-ajax-data with the html identification of the field
+  with the id field of the parent record (TODO: nested in nested)
 * In the partial include as hidden field the identification and in the 
   link_to_remove_association helper add data-existing in true.
 
