@@ -20,19 +20,22 @@
    * @param {Array.<number>} new_ids New identifications for fields to add,
    *   	index starting at 0 and there are count
    * @param {number} count Amount of fields to add
-   * @param {string} content $this.data('association-insertion-template')
    */
-  var add_fields = function($this, new_ids, count, content) {
+  var add_fields = function($this, new_ids, count) {
     var assoc                 = $this.data('association'),
         assocs                = $this.data('associations'),
+        content               = $this.data('association-insertion-template'),
         insertionMethod       = $this.data('association-insertion-method') || $this.data('association-insertion-position') || 'before',
         insertionNode         = $this.data('association-insertion-node'),
         insertionTraversal    = $this.data('association-insertion-traversal'),
         regexp_braced         = new RegExp('\\[new_' + assoc + '\\](.*?\\s)', 'g'),
         regexp_underscord     = new RegExp('_new_' + assoc + '_(\\w*)', 'g'),
+        regexp_inputid        = new RegExp('<input .*id="[^"]*_' + assoc + '_id"', 'g'),
         new_content           = content.replace(regexp_braced, newcontent_braced(new_ids[0])),
         new_contents          = [];
 
+    new_content = new_content.replace(regexp_inputid, 
+		    '$& value="' + new_ids[0] + '" ');
     if (new_content == content) {
       regexp_braced     = new RegExp('\\[new_' + assocs + '\\](.*?\\s)', 'g');
       regexp_underscord = new RegExp('_new_' + assocs + '_(\\w*)', 'g');
@@ -76,8 +79,7 @@
     e.preventDefault();
     var $this                 = $(this),
 	assoc                 = $this.data('association'),
-        count                 = parseInt($this.data('count'), 10),
-        content               = $this.data('association-insertion-template');
+        count = parseInt($this.data('count'), 10);
     count = (isNaN(count) ? 1 : Math.max(count, 1));
     if ($this.data("ajax") && count == 1) {
       // For the moment ajax when adding 1 element, so function that
@@ -85,23 +87,19 @@
       var cid = $this.data("ajaxdata");
       var mdata = {};
       mdata[cid] = $('#' + cid).val();
-      var regexp_inputid = new RegExp('<input .*id="[^"]*_' + assoc + '_id"', 'g'),
-
       $.ajax($this.data("ajax"), {
         type: 'GET',
         dataType: 'json', 
         data: mdata
       }).done(function(new_id) { 
-        var new_content = content.replace(regexp_inputid, 
-	  '$& value="' + new_id + '" ');
-        add_fields($this, [new_id], 1, new_content); 
+        add_fields($this, [new_id], 1); 
       });
     } else {
         new_ids=[];
 	for(i = 0; i<count; i++) {
     		new_ids[i] = create_new_id();
 	}
-    	add_fields($this, new_ids, count, content);
+    	add_fields($this, new_ids, count);
     }
   });
     
