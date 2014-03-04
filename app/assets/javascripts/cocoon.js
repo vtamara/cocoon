@@ -95,6 +95,8 @@
         var new_content = content.replace(regexp_inputid, 
 	  '$& value="' + new_id + '" ');
         add_fields($this, [new_id], 1, new_content); 
+      }).fail(function(jqXHR, textStatus) {
+        alert( "Cocoon request failed: " + textStatus );
       });
     } else {
         new_ids=[];
@@ -105,29 +107,34 @@
     }
   });
     
-  
-  $(document).on('click', '.remove_fields.dynamic, .remove_fields.existing', function(e) {
-    var $this = $(this),
-        wrapper_class = $this.data('wrapper-class') || 'nested-fields',
+ 
+  _cocoon_remove_fields = function($this) {
+    var wrapper_class = $this.data('wrapper-class') || 'nested-fields',
         node_to_delete = $this.closest('.' + wrapper_class),
         trigger_node = node_to_delete.parent();
-
-    e.preventDefault();
 
     trigger_node.trigger('cocoon:before-remove', [node_to_delete]);
 
     var timeout = trigger_node.data('remove-timeout') || 0;
-
-    setTimeout(function() {
-      if ($this.hasClass('dynamic')) {
-          node_to_delete.remove();
-      } else {
-          $this.prev("input[type=hidden]").val("1");
-          node_to_delete.hide();
-      }
-      trigger_node.trigger('cocoon:after-remove', [node_to_delete]);
-    }, timeout);
-  });
+    var cancel = node_to_delete.data('remove-cancel') == "true";
+    if (!cancel) {
+	    setTimeout(function() {
+		    if ($this.hasClass('dynamic')) {
+			    node_to_delete.remove();
+		    } else {
+			    $this.prev("input[type=hidden]").val("1");
+			    node_to_delete.hide();
+		    }
+		    trigger_node.trigger('cocoon:after-remove', [node_to_delete]);
+	    }, timeout);
+    }
+  }
+  $(document).on('click', '.remove_fields.dynamic, .remove_fields.existing', 
+		  function (e) { 
+			  e.preventDefault();
+			  _cocoon_remove_fields($(this))
+		  }
+	  );
 
   $('.remove_fields.existing.destroyed').each(function(i, obj) {
     var $this = $(this),
