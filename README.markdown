@@ -319,6 +319,33 @@ Example use:
 
 By default `:force_non_association_create` is `false`.
 
+### :ajax  and :ajax-ajaxdata
+
+Use AJAX to set identification of new association.
+
+By default the partials added with the button link_to_add_association use
+internal identifications that don't correspond to database identifications.
+
+If you prefer to create a new record in a table and use its identification
+in the partial added, then:
+* Add a method in a controller that will serve the AJAX request by
+  creating the record and return the identification. 
+  It should receive from params the id of the parent record, 
+  set default values, save and return the identification of the new record.
+  Optionally if you want to return more identifications (for example 
+  of other objects created), return a hash that includes a key with the
+  name of the association and its new identification, and also the name
+  of other objects and the new identifications.
+* Add a route to the method in config/routes
+* In link_to_add_association add data-ajax with the route that will
+  create the record, data-ajaxdata with the html identification of the field
+  with the id field of the parent record 
+* In the partial include as hidden field the identification and in the 
+  link_to_remove_association helper add data-existing in true.
+
+Note that in this moment if you use :ajax, you cannot use :count.
+
+
 ### link_to_remove_association
 
 This function will add a link to your markup that, when clicked, dynamically removes the surrounding partial form.
@@ -462,23 +489,6 @@ For the JavaScript to behave correctly, the partial should start with a containe
 
 There is no limit to the amount of nesting, though.
 
-
-### AJAX to set identifications
-
-By default the partials added with the button link_to_add_association use
-internal identifications that don't correspond to database identification.
-
-If you prefer to create a new record in a table and use its identification
-in the partial added, then:
-* Add a method in a controller that will serve the AJAX request by
-  creating the record. It should take from params the id of the parent record, 
-  set default values, save and return the identification of the new record
-* Add a route to the method in config/routes
-* In the link_to_add_association add data-ajax with the route that will
-  create the record, data-ajax-data with the html identification of the field
-  with the id field of the parent record (TODO: nested in nested)
-* In the partial include as hidden field the identification and in the 
-  link_to_remove_association helper add data-existing in true.
 
 
 ## Note on Patches/Pull Requests

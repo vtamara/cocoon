@@ -92,18 +92,38 @@
         dataType: 'json', 
         data: mdata
       }).done(function(new_id) { 
-        var new_content = content.replace(regexp_inputid, 
-	  '$& value="' + new_id + '" ');
-        add_fields($this, [new_id], 1, new_content); 
+        var new_content;
+        if (typeof new_id == "string" || typeof new_id == "number") {
+          new_content = content.replace(regexp_inputid, 
+            '$& value="' + new_id + '" ');
+          id=new_id
+        } else {
+          if (!(assoc in new_id)) {
+            alert( "Cocoon request failed, json returned should include key " 
+		    + assoc + " with identification of new association");
+          }
+          id=new_id[assoc]
+          new_content = content.replace(regexp_inputid, 
+            '$& value="' + id + '" ');
+          for (var i in new_id) {
+            if (i != assoc) {
+              var regexp_secinputid = new RegExp(
+                  '<input .*id="[^"]*_' + i + '_attributes_id"', 'g');
+              new_content = new_content.replace(regexp_secinputid, 
+                '$& value="' + new_id[i] + '" ');
+            } 
+          }
+        }
+        add_fields($this, [id], 1, new_content); 
       }).fail(function(jqXHR, textStatus) {
         alert( "Cocoon request failed: " + textStatus );
       });
     } else {
         new_ids=[];
-	for(i = 0; i<count; i++) {
-    		new_ids[i] = create_new_id();
-	}
-    	add_fields($this, new_ids, count, content);
+        for(i = 0; i<count; i++) {
+          new_ids[i] = create_new_id();
+        }
+        add_fields($this, new_ids, count, content);
     }
   });
     
