@@ -112,7 +112,7 @@
               new_content = new_content.replace(regexp_secinputid, 
                 '$& value="' + new_id[i] + '" ');
               var regexp_field = new RegExp(
-                  '<input .*id="[^"]*_new_' + assoc + "_" i + '"', 'g');
+                  '<input .*id="[^"]*_new_' + assoc + '_' + i + '"', 'g');
               new_content = new_content.replace(regexp_field, 
                 '$& value="' + new_id[i] + '" ');
             } 
