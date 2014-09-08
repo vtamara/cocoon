@@ -105,15 +105,27 @@
           id=new_id[assoc]
           new_content = content.replace(regexp_inputid, 
             '$& value="' + id + '" ');
-	  jnc = $(new_content);
           for (var i in new_id) {
             if (i != assoc) {
-              jnc.find('input[id$=' + i + '_attributes_id]').val(new_id[i]);
-              jnc.find('input[id$=_new_' + assoc + '_' + i +']').val(new_id[i]);
+              // We tried by converting to jquery and using val and html but
+              // didn't change the generated html
+              var regexp_secinputid = new RegExp(
+                  '<input .*id="[^"]*_' + i + '_attributes_id"', 'g');
+              new_content = new_content.replace(regexp_secinputid, 
+                  '$& value="' + new_id[i] + '" ');
+              var regexp_input = new RegExp(
+	          '<input .*id="[^"]*_new_' + assoc + '_' + i + '"', 'g');
+              new_content = new_content.replace(regexp_input, 
+                  '$& value="' + new_id[i] + '" ');
+              var regexp_select = new RegExp(
+	          '<select .*id="[^"]*_new_' + assoc + '_' + i + 
+                  '".* <option value="' + new_id[i] + '"', 'g');
+              new_content = new_content.replace(regexp_input, 
+                  '$& selected');
             } 
           }
         }
-        add_fields($this, [id], 1, jnc[0].outerHTML); 
+        add_fields($this, [id], 1, new_content); 
       }).fail(function(jqXHR, textStatus) {
         alert( "Cocoon request failed: " + textStatus );
       });
