@@ -105,20 +105,15 @@
           id=new_id[assoc]
           new_content = content.replace(regexp_inputid, 
             '$& value="' + id + '" ');
+	  jnc = $(new_content);
           for (var i in new_id) {
             if (i != assoc) {
-              var regexp_secinputid = new RegExp(
-                  '<input .*id="[^"]*_' + i + '_attributes_id"', 'g');
-              new_content = new_content.replace(regexp_secinputid, 
-                '$& value="' + new_id[i] + '" ');
-              var regexp_field = new RegExp(
-                  '<input .*id="[^"]*_new_' + assoc + '_' + i + '"', 'g');
-              new_content = new_content.replace(regexp_field, 
-                '$& value="' + new_id[i] + '" ');
+              jnc.find('input[id$=' + i + '_attributes_id]').val(new_id[i]);
+              jnc.find('input[id$=_new_' + assoc + '_' + i +']').val(new_id[i]);
             } 
           }
         }
-        add_fields($this, [id], 1, new_content); 
+        add_fields($this, [id], 1, jnc[0].outerHTML); 
       }).fail(function(jqXHR, textStatus) {
         alert( "Cocoon request failed: " + textStatus );
       });
