@@ -12,17 +12,19 @@ module Cocoon
     # - *f* : the form this link should be placed in
     # - *html_options*:  html options to be passed to link_to (see <tt>link_to</tt>)
     # - *&block*:        the output of the block will be show in the link, see <tt>link_to</tt>
-    
+
     def link_to_remove_association(*args, &block)
       if block_given?
-        f            = args.first
-        html_options = args.second || {}
-        name         = capture(&block)
-        link_to_remove_association(name, f, html_options)
+        link_to_remove_association(capture(&block), *args)
+      elsif args.first.respond_to?(:object)
+        form = args.first
+        association = form.object.class.to_s.tableize
+        name = I18n.translate("cocoon.#{association}.remove", default: I18n.translate('cocoon.defaults.remove'))
+
+        link_to_remove_association(name, *args)
       else
-        name         = args[0]
-        f            = args[1]
-        html_options = args[2] || {}
+        name, f, html_options = *args
+        html_options ||= {}
 
         is_dynamic = f.object.new_record?
 
@@ -47,7 +49,7 @@ module Cocoon
     def render_association(association, f, new_object, form_name, render_options={}, custom_partial=nil)
       partial = get_partial_path(custom_partial, association)
       locals =  render_options.delete(:locals) || {}
-      method_name = f.respond_to?(:semantic_fields_for) ? :semantic_fields_for : (f.respond_to?(:simple_fields_for) ? :simple_fields_for : :fields_for)
+      method_name = f.class.ancestors.include?('SimpleForm::Builder') ? :simple_fields_for : (f.class.ancestors.include?('Formtastic::FormBuilder') ? :semantic_fields_for : :fields_for)
       f.send(method_name, association, new_object, {:child_index => "new_#{association}"}.merge(render_options)) do |builder|
         partial_options = {form_name.to_sym => builder, :dynamic => true}.merge(locals)
         render(partial, partial_options)
@@ -64,22 +66,22 @@ module Cocoon
     #              - *:locals*     : the locals hash in the :render_options is handed to the partial
     #          - *:partial*        : explicitly override the default partial name
     #          - *:wrap_object*    : a proc that will allow to wrap your object, especially suited when using
-    #                                decorators, or if you want special initialisation   
+    #                                decorators, or if you want special initialisation
     #          - *:form_name*      : the parameter for the form in the nested form partial. Default `f`.
     #          - *:count*          : Count of how many objects will be added on a single click. Default `1`.
     # - *&block*:        see <tt>link_to</tt>
 
     def link_to_add_association(*args, &block)
       if block_given?
-        f            = args[0]
-        association  = args[1]
-        html_options = args[2] || {}
-        link_to_add_association(capture(&block), f, association, html_options)
+        link_to_add_association(capture(&block), *args)
+      elsif args.first.respond_to?(:object)
+        association = args.second
+        name = I18n.translate("cocoon.#{association}.add", default: I18n.translate('cocoon.defaults.add'))
+
+        link_to_add_association(name, *args)
       else
-        name         = args[0]
-        f            = args[1]
-        association  = args[2]
-        html_options = args[3] || {}
+        name, f, association, html_options = *args
+        html_options ||= {}
 
         render_options   = html_options.delete(:render_options)
         render_options ||= {}
@@ -96,8 +98,8 @@ module Cocoon
         new_object = create_object(f, association, force_non_association_create)
         new_object = wrap_object.call(new_object) if wrap_object.respond_to?(:call)
 
-        html_options[:'data-association-insertion-template'] = CGI.escapeHTML(render_association(association, f, new_object, form_parameter_name, render_options, override_partial)).html_safe
-        
+        html_options[:'data-association-insertion-template'] = CGI.escapeHTML(render_association(association, f, new_object, form_parameter_name, render_options, override_partial).to_str).html_safe
+
         html_options[:'data-count'] = count if count > 0
 
         link_to(name, '#', html_options)
@@ -140,6 +142,8 @@ module Cocoon
           assoc_obj = f.object.send("build_#{association}")
           f.object.send(association).delete
         end
+
+        assoc_obj = assoc_obj.dup if assoc_obj.frozen?
 
         assoc_obj
       end

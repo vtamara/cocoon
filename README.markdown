@@ -68,7 +68,7 @@ Your models are associated like this:
 ```ruby
 class Project < ActiveRecord::Base
   has_many :tasks
-  accepts_nested_attributes_for :tasks, :reject_if => :all_blank, :allow_destroy => true
+  accepts_nested_attributes_for :tasks, reject_if: :all_blank, allow_destroy: true
 end
 
 class Task < ActiveRecord::Base
@@ -83,10 +83,10 @@ named `_task_fields.html`.
 ### Strong Parameters Gotcha
 
 To destroy nested models, rails uses a virtual attribute called `_destroy`.
-When `_destroy` is set, the nested model will be deleted.
+When `_destroy` is set, the nested model will be deleted. If the record is persisted, rails performs `id` field lookup to destroy the real record, so if `id` wasn't specified, it will treat current set of parameters like a parameters for a new record.
 
 When using strong parameters (default in rails 4), you need to explicitly
-add `:_destroy` to the list of permitted parameters.
+add both `:id` and `:_destroy` to the list of permitted parameters.
 
 E.g. in your `ProjectsController`:
 
@@ -98,25 +98,28 @@ E.g. in your `ProjectsController`:
 
 ## Examples
 
-Cocoon's default configuration requires `link_to_add_association` and associated partials to 
+Cocoon's default configuration requires `link_to_add_association` and associated partials to
 be properly wrapped with elements. The examples below illustrate simple layouts.
+
+Please note these examples rely on the `haml` gem (instead of the default `erb` views).
 
 ### Formtastic
 
 In our `projects/_form` partial we'd write:
 
 ```haml
-= f.inputs do
-  = f.input :name
-  = f.input :description
-  %h3 Tasks
-  #tasks
-    = f.semantic_fields_for :tasks do |task|
-      = render 'task_fields', :f => task
-    .links
-      = link_to_add_association 'add task', f, :tasks
-  = f.actions do
-    = f.action :submit
+= semantic_form_for @project do |f|
+  = f.inputs do
+    = f.input :name
+    = f.input :description
+    %h3 Tasks
+    #tasks
+      = f.semantic_fields_for :tasks do |task|
+        = render 'task_fields', f: task
+      .links
+        = link_to_add_association 'add task', f, :tasks
+    = f.actions do
+      = f.action :submit
 ```
 
 And in our `_task_fields` partial we'd write:
@@ -125,7 +128,7 @@ And in our `_task_fields` partial we'd write:
 .nested-fields
   = f.inputs do
     = f.input :description
-    = f.input :done, :as => :boolean
+    = f.input :done, as: :boolean
     = link_to_remove_association "remove task", f
 ```
 
@@ -142,7 +145,7 @@ In our `projects/_form` partial we'd write:
   %h3 Tasks
   #tasks
     = f.simple_fields_for :tasks do |task|
-      = render 'task_fields', :f => task
+      = render 'task_fields', f: task
     .links
       = link_to_add_association 'add task', f, :tasks
   = f.submit
@@ -153,7 +156,7 @@ In our `_task_fields` partial we write:
 ```haml
 .nested-fields
   = f.input :description
-  = f.input :done, :as => :boolean
+  = f.input :done, as: :boolean
   = link_to_remove_association "remove task", f
 ```
 
@@ -176,7 +179,7 @@ In our `projects/_form` partial we'd write:
   %h3 Tasks
   #tasks
     = f.fields_for :tasks do |task|
-      = render 'task_fields', :f => task
+      = render 'task_fields', f: task
     .links
       = link_to_add_association 'add task', f, :tasks
   = f.submit
@@ -213,7 +216,7 @@ This should be called within the form builder.
 - html_options: extra html-options (see [`link_to`](http://api.rubyonrails.org/classes/ActionView/Helpers/UrlHelper.html#method-i-link_to)
   There are some special options, the first three allow to control the placement of the new link-data:
   - `data-association-insertion-traversal` : the jquery traversal method to allow node selection relative to the link. `closest`, `next`, `children`, etc. Default: absolute selection
-  - `data-association-insertion-node` : the jquery selector of the node
+  - `data-association-insertion-node` : the jquery selector of the node. Default: parent node
   - `data-association-insertion-method` : jquery method that inserts the new data. `before`, `after`, `append`, `prepend`, etc. Default: `before`
   - `data-association-insertion-position` : old method specifying where to insert new data.
       - this setting still works but `data-association-insertion-method` takes precedence. may be removed in a future version.
@@ -230,21 +233,21 @@ Optionally, you can omit the name and supply a block that is captured to render 
 Inside the `html_options` you can add an option `:render_options`, and the containing hash will be handed down to the form builder for the inserted
 form.
 
-When using Twitter Bootstrap and SimpleForm together, `simple_fields_for` needs the option `:wrapper => 'inline'` which can
+When using Twitter Bootstrap and SimpleForm together, `simple_fields_for` needs the option `wrapper: 'inline'` which can
 be handed down as follows:
 
-(Note: In certain newer versions of simple_form, the option to use is `:wrapper => 'bootstrap'`.)
+(Note: In certain newer versions of simple_form, the option to use is `wrapper: 'bootstrap'`.)
 
 ```haml
 = link_to_add_association 'add something', f, :something,
-    :render_options => {:wrapper => 'inline' }
+    render_options: { wrapper: 'inline' }
 ```
 
 To specify locals that needed to handed down to the partial:
 
 ```haml
 = link_to_add_association 'add something', f, :something,
-    :render_options => {:locals => {:sherlock => 'Holmes' }}
+    render_options: {locals: { sherlock: 'Holmes' }}
 ```
 
 #### :partial
@@ -253,7 +256,7 @@ To override the default partial name, e.g. because it shared between multiple vi
 
 ```haml
 = link_to_add_association 'add something', f, :something,
-    :partial => 'shared/something_fields'
+    partial: 'shared/something_fields'
 ```
 
 #### :wrap_object
@@ -286,7 +289,7 @@ To use this:
 
 ```haml
 = link_to_add_association('add something', @form_obj, :comments,
-    :wrap_object => Proc.new {|comment| CommentDecorator.new(comment) })
+    wrap_object: Proc.new {|comment| CommentDecorator.new(comment) })
 ```
 
 Note that the `:wrap_object` expects an object that is _callable_, so any `Proc` will do. So you could as well use it to do some fancy extra initialisation (if needed).
@@ -295,8 +298,8 @@ E.g.
 
 
 ```haml
-= link_to_add_association('add something', @form_obj, :comments, 
-    :wrap_object => Proc.new { |comment| comment.name = current_user.name; comment })
+= link_to_add_association('add something', @form_obj, :comments,
+    wrap_object: Proc.new { |comment| comment.name = current_user.name; comment })
 ```
 
 #### :force_non_association_create
@@ -314,7 +317,7 @@ Example use:
 
 ```haml
 = link_to_add_association('add something', @form_obj, :comments,
-    :force_non_association_create => true)
+    force_non_association_create: true)
 ```
 
 By default `:force_non_association_create` is `false`.
@@ -359,8 +362,10 @@ It takes three parameters:
 
 Optionally you could also leave out the name and supply a block that is captured to give the name (if you want to do something more complicated).
 
-Optionally, you can add an html option called `wrapper_class` to use a different wrapper div instead of `.nested-class`.
+Optionally, you can add an html option called `wrapper_class` to use a different wrapper div instead of `.nested-fields`.
 The class should be added without a preceding dot (`.`).
+
+> Note: the javascript behind the generated link relies on the presence of a wrapper class (default `.nested-fields`) to function correctly.
 
 Example:
 ```haml
@@ -394,7 +399,7 @@ If in your view you have the following snippet to select an `owner`:
 ```haml
 #owner
   #owner_from_list
-    = f.association :owner, :collection => Person.all(:order => 'name'), :prompt => 'Choose an existing owner'
+    = f.association :owner, collection: Person.all(order: 'name'), prompt: 'Choose an existing owner'
   = link_to_add_association 'add a new person as owner', f, :owner
 ```
 
@@ -489,10 +494,41 @@ For the JavaScript to behave correctly, the partial should start with a containe
 
 There is no limit to the amount of nesting, though.
 
+## I18n
 
+As you seen in previous sections, the helper method `link_to_add_association` treats the first parameter as a name. Additionally, if it's skipped and the `form` object is passed as the first one, then **Cocoon** names it using **I18n**.
+
+It allows to invoke helper methods like this:
+
+```haml
+= link_to_add_association form_object, :tasks
+= link_to_remove_association form_object
+```
+
+instead of:
+
+```haml
+= link_to_add_association "Add task", form_object, :tasks
+= link_to_remove_association "remove task", form_object
+```
+
+**Cocoon** uses the name of `association` as a translations scope key. If custom translations for association is not present it fallbacks to default name. Example of translations tree:
+
+```yaml
+en:
+  cocoon:
+    defaults:
+      add: "Add record"
+      remove: "Remove record"
+    tasks:
+      add: "Add new task"
+      remove: "Remove old task"
+```
+
+Note that `link_to_remove_association` does not require `association` name as an argument. In order to get correct translation key, **Cocoon** tableizes `class` name of the target object of form builder (`form_object.object` from previous example).
 
 ## Note on Patches/Pull Requests
- 
+
 * Fork the project.
 * Make your feature addition or bug fix.
 * Add tests for it. This is important so I don't break it in a
@@ -518,6 +554,6 @@ Copyright (c) 2010 Nathan Van der Auwera. See LICENSE for details.
 
 ## Not Related To Apache Cocoon
 
-Please note that this project is not related to the Apache Cocoon web framework project. 
+Please note that this project is not related to the Apache Cocoon web framework project.
 
 [Apache Cocoon](http://cocoon.apache.org/), Cocoon, and Apache are either registered trademarks or trademarks of the [Apache Software Foundation](http://www.apache.org/) in the United States and/or other countries.

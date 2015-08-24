@@ -5,11 +5,11 @@
   var create_new_id = function() {
     return (new Date().getTime() + cocoon_element_counter++);
   }
-  
+
   var newcontent_braced = function(id) {
     return '[' + id + ']$1';
   }
-  
+
   var newcontent_underscord = function(id) {
     return '_' + id + '_$1';
   }
@@ -47,7 +47,7 @@
       new_content = new_content.replace(regexp_underscord, newcontent_underscord(new_ids[i]));
       new_contents.push(new_content);
     }
-    
+
     if (insertionNode){
       if (insertionTraversal){
         insertionNode = $this[insertionTraversal](insertionNode);
@@ -58,8 +58,8 @@
       insertionNode = $this.parent();
     }
 
-    for (var i in new_contents) {
-      var contentNode = $(new_contents[i]);
+    $.each(new_contents, function(i, node) {
+      var contentNode = $(node);
 
       insertionNode.trigger('cocoon:before-insert', [contentNode]);
 
@@ -69,8 +69,8 @@
       var addedContent = insertionNode[insertionMethod](contentNode);
 
       insertionNode.trigger('cocoon:after-insert', [contentNode]);
-    }
-  }
+    });
+  };
 
   $(document).on('click', '.add_fields', function(e) {
     e.preventDefault();
